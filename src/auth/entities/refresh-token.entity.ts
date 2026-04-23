@@ -13,9 +13,12 @@ export class RefreshToken {
     tokenID!: string;
 
     @Column({ nullable: false })
-    token!: string;
+    tokenHash!: string;
 
-    @ManyToOne(() => User, (user) => user.refreshTokens, { eager: true })
+    @Column({ default: false })
+    isRevoked!: boolean;
+
+    @ManyToOne(() => User, (user) => user.refreshTokens, { eager: false })
     user!: User;
 
     @CreateDateColumn()

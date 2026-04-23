@@ -13,7 +13,16 @@ import { ConfigService } from '@nestjs/config';
                 password: configService.getOrThrow<string>('DATABASE_PASSWORD'),
                 database: configService.getOrThrow<string>('DATABASE_NAME'),
                 autoLoadEntities: true,
-                synchronize: true, // auto sync schema (disable in production)
+                synchronize: false,
+                migrations: ['dist/database/migrations/*.js'],
+                logging:
+                    configService.get<string>('NODE_ENV') === 'development',
+                ssl:
+                    configService.get<string>('NODE_ENV') === 'production'
+                        ? {
+                              rejectUnauthorized: false,
+                          }
+                        : false,
             }),
             inject: [ConfigService],
         }),
