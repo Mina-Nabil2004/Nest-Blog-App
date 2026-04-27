@@ -21,11 +21,13 @@ export class UsersService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        return user;
+        return this.toPublicUser(user);
     }
 
     async getAllUsers(): Promise<UserPublic[]> {
-        return this.usersRepository.find();
+        return (await this.usersRepository.find()).map((user) =>
+            this.toPublicUser(user),
+        );
     }
 
     async updateUser(
@@ -45,7 +47,7 @@ export class UsersService {
             }
         }
         Object.assign(user, updateUserDto);
-        return this.usersRepository.save(user);
+        return this.toPublicUser(await this.usersRepository.save(user));
     }
 
     async changeUserRole(
@@ -57,7 +59,7 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
         user.role = newRole;
-        return this.usersRepository.save(user);
+        return this.toPublicUser(await this.usersRepository.save(user));
     }
 
     async deleteUser(userID: string): Promise<void> {
@@ -88,5 +90,11 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
         return user.comments;
+    }
+
+    private toPublicUser(user: User): UserPublic {
+        const { passwordHash, ...publicUser } = user;
+        void passwordHash;
+        return publicUser as UserPublic;
     }
 }

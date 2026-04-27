@@ -5,11 +5,18 @@ import {
     Delete,
     Get,
     Patch,
-    ValidationPipe,
+    UseGuards,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
@@ -20,30 +27,35 @@ export class UsersController {
     }
 
     @Get(':id')
-    getUserById(@Param('id') userID: string) {
+    getUserById(@Param('id', ParseUUIDPipe) userID: string) {
         return this.usersService.getUserById(userID);
     }
 
     @Get(':id/blogs')
-    getUserBlogs(@Param('id') userID: string) {
+    getUserBlogs(@Param('id', ParseUUIDPipe) userID: string) {
         return this.usersService.getUserBlogs(userID);
     }
 
     @Get(':id/comments')
-    getUserComments(@Param('id') userID: string) {
+    getUserComments(@Param('id', ParseUUIDPipe) userID: string) {
         return this.usersService.getUserComments(userID);
     }
 
     @Patch(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     updateUser(
-        @Param('id') userID: string,
-        @Body(ValidationPipe) updateUserDto: UpdateUserDto,
+        @Param('id', ParseUUIDPipe) userID: string,
+        @Body() updateUserDto: UpdateUserDto,
     ) {
         return this.usersService.updateUser(userID, updateUserDto);
     }
 
     @Delete(':id')
-    deleteUser(@Param('id') userID: string) {
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    deleteUser(@Param('id', ParseUUIDPipe) userID: string) {
         return this.usersService.deleteUser(userID);
     }
 }

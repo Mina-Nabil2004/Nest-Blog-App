@@ -84,28 +84,28 @@ export class InitSchema1776939649040 implements MigrationInterface {
             ALTER TABLE "blog"
             ADD CONSTRAINT "FK_blog_author"
             FOREIGN KEY ("authorUserID") REFERENCES "user"("userID")
-            ON DELETE NO ACTION ON UPDATE NO ACTION
+            ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
             ALTER TABLE "comment"
             ADD CONSTRAINT "FK_comment_author"
             FOREIGN KEY ("authorUserID") REFERENCES "user"("userID")
-            ON DELETE NO ACTION ON UPDATE NO ACTION
+            ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
             ALTER TABLE "comment"
             ADD CONSTRAINT "FK_comment_blog"
             FOREIGN KEY ("blogBlogID") REFERENCES "blog"("blogID")
-            ON DELETE NO ACTION ON UPDATE NO ACTION
+            ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
             ALTER TABLE "refresh_token"
             ADD CONSTRAINT "FK_refresh_token_user"
             FOREIGN KEY ("userUserID") REFERENCES "user"("userID")
-            ON DELETE NO ACTION ON UPDATE NO ACTION
+            ON DELETE CASCADE ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
@@ -135,24 +135,24 @@ export class InitSchema1776939649040 implements MigrationInterface {
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`DROP INDEX "IDX_blog_tags_tag_tag"`);
         await queryRunner.query(`DROP INDEX "IDX_blog_tags_tag_blog"`);
-        await queryRunner.query(`
-            ALTER TABLE "blog_tags_tag" DROP CONSTRAINT "FK_blog_tags_tag_tag"
-            `);
-        await queryRunner.query(`
-            ALTER TABLE "blog_tags_tag" DROP CONSTRAINT "FK_blog_tags_tag_blog"
-            `);
-        await queryRunner.query(`
-            ALTER TABLE "refresh_token" DROP CONSTRAINT "FK_refresh_token_user"
-            `);
-        await queryRunner.query(`
-            ALTER TABLE "comment" DROP CONSTRAINT "FK_comment_blog"
-            `);
-        await queryRunner.query(`
-            ALTER TABLE "comment" DROP CONSTRAINT "FK_comment_author"
-            `);
-        await queryRunner.query(`
-            ALTER TABLE "blog" DROP CONSTRAINT "FK_blog_author"
-            `);
+        await queryRunner.query(
+            `ALTER TABLE "blog_tags_tag" DROP CONSTRAINT "FK_blog_tags_tag_tag"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "blog_tags_tag" DROP CONSTRAINT "FK_blog_tags_tag_blog"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "refresh_token" DROP CONSTRAINT "FK_refresh_token_user"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "comment" DROP CONSTRAINT "FK_comment_blog"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "comment" DROP CONSTRAINT "FK_comment_author"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "blog" DROP CONSTRAINT "FK_blog_author"`,
+        );
         await queryRunner.query(`DROP TABLE "blog_tags_tag"`);
         await queryRunner.query(`DROP TABLE "refresh_token"`);
         await queryRunner.query(`DROP TABLE "comment"`);

@@ -1,9 +1,9 @@
 import { IsEnum, IsOptional } from 'class-validator';
-import { CreateUserDto } from '../../auth/dtos/create-user.dto';
+import { SignupDto } from '../../auth/dtos/signup.dto';
 import { PartialType } from '@nestjs/swagger';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
+export class UpdateUserDto extends PartialType(SignupDto) {
     @ApiPropertyOptional()
     @IsEnum(['BASIC', 'ADMIN'], {
         message: 'Role must be either BASIC or ADMIN',

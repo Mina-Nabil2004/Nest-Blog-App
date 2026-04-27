@@ -3,14 +3,15 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+
 import { Comment } from './entities/comment.entity';
-import { CommentDto } from './dto/comment.dto';
+import { Blog } from '../blogs/entities/blog.entity';
+import { User } from '../users/entities/user.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Blog } from '@/blogs/entities/blog.entity';
-import { User } from '@/users/entities/user.entity';
+import { CommentDto } from './dto/comment.dto';
 
 @Injectable()
 export class CommentsService {
@@ -24,38 +25,39 @@ export class CommentsService {
     ) {}
 
     async createComment(
+        authorID: string,
         createCommentDto: CreateCommentDto,
     ): Promise<CommentDto> {
         const author = await this.usersRepository.findOneBy({
-            userID: createCommentDto.authorID,
+            userID: authorID,
         });
-        if (!author) {
-            throw new NotFoundException('Author not found');
-        }
+        if (!author) throw new NotFoundException('Author not found');
+
         const blog = await this.blogsRepository.findOneBy({
             blogID: createCommentDto.blogID,
         });
-        if (!blog) {
-            throw new NotFoundException('Blog not found');
-        }
+        if (!blog) throw new NotFoundException('Blog not found');
+
         const comment = this.commentsRepository.create({
             content: createCommentDto.content,
             author,
             blog,
         });
-        return this.commentsRepository.save(comment);
+        return this.toPublicComment(
+            await this.commentsRepository.save(comment),
+        );
     }
 
     async getAllComments(): Promise<CommentDto[]> {
-        return this.commentsRepository.find();
+        return (await this.commentsRepository.find()).map((comment) =>
+            this.toPublicComment(comment),
+        );
     }
 
     async getCommentById(commentID: string): Promise<CommentDto> {
         const comment = await this.commentsRepository.findOneBy({ commentID });
-        if (!comment) {
-            throw new NotFoundException('Comment not found');
-        }
-        return comment;
+        if (!comment) throw new NotFoundException('Comment not found');
+        return this.toPublicComment(comment);
     }
 
     async updateComment(
@@ -67,16 +69,17 @@ export class CommentsService {
             where: { commentID },
             relations: ['author'],
         });
-        if (!comment) {
-            throw new NotFoundException('Comment not found');
-        }
+        if (!comment) throw new NotFoundException('Comment not found');
+
         if (comment.author.userID !== authorID) {
             throw new ForbiddenException(
                 'You can only update your own comments',
             );
         }
         Object.assign(comment, { content: updateCommentDto.content });
-        return this.commentsRepository.save(comment);
+        return this.toPublicComment(
+            await this.commentsRepository.save(comment),
+        );
     }
 
     async deleteComment(commentID: string, authorID: string): Promise<void> {
@@ -84,14 +87,24 @@ export class CommentsService {
             where: { commentID },
             relations: ['author'],
         });
-        if (!comment) {
-            throw new NotFoundException('Comment not found');
-        }
+        if (!comment) throw new NotFoundException('Comment not found');
+
         if (comment.author.userID !== authorID) {
             throw new ForbiddenException(
                 'You can only delete your own comments',
             );
         }
         await this.commentsRepository.remove(comment);
+    }
+
+    private toPublicComment(comment: Comment): CommentDto {
+        const { author, blog, ...rest } = comment;
+        const { passwordHash, ...publicAuthor } = author;
+        void passwordHash;
+        return {
+            ...rest,
+            author: publicAuthor,
+            blogID: blog.blogID,
+        } as CommentDto;
     }
 }

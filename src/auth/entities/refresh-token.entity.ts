@@ -18,7 +18,9 @@ export class RefreshToken {
     @Column({ default: false })
     isRevoked!: boolean;
 
-    @ManyToOne(() => User, (user) => user.refreshTokens, { eager: false })
+    @ManyToOne(() => User, (user) => user.refreshTokens, {
+        onDelete: 'CASCADE',
+    })
     user!: User;
 
     @CreateDateColumn()

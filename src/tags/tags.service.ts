@@ -3,29 +3,29 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
-import { Tag } from './entities/tag.entity';
-import { Blog } from '../blogs/entities/blog.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { Tag } from './entities/tag.entity';
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateTagDto } from './dto/update-tag.dto';
 import { TagDto } from './dto/tag.dto';
+import { Blog } from '../blogs/entities/blog.entity';
 
 @Injectable()
 export class TagsService {
     constructor(
         @InjectRepository(Tag)
         private readonly tagsRepository: Repository<Tag>,
-        @InjectRepository(Blog)
-        private readonly blogsRepository: Repository<Blog>,
     ) {}
 
     async createTag(createTagDto: CreateTagDto): Promise<TagDto> {
         const existing = await this.tagsRepository.findOne({
             where: { name: createTagDto.name },
         });
-        if (existing)
+        if (existing) {
             throw new BadRequestException('Tag with this name already exists');
+        }
         const tag = this.tagsRepository.create(createTagDto);
         return this.tagsRepository.save(tag);
     }
@@ -36,9 +36,8 @@ export class TagsService {
 
     async getTagById(tagID: string): Promise<TagDto> {
         const tag = await this.tagsRepository.findOneBy({ tagID });
-        if (!tag) {
-            throw new BadRequestException('Tag not found');
-        }
+        if (!tag) throw new NotFoundException('Tag not found');
+
         return tag;
     }
 
@@ -47,18 +46,16 @@ export class TagsService {
         updateTagDto: UpdateTagDto,
     ): Promise<TagDto> {
         const tag = await this.tagsRepository.findOneBy({ tagID });
-        if (!tag) {
-            throw new NotFoundException('Tag not found');
-        }
+        if (!tag) throw new NotFoundException('Tag not found');
+
         Object.assign(tag, updateTagDto);
-        return await this.tagsRepository.save(tag);
+        return this.tagsRepository.save(tag);
     }
 
     async deleteTag(tagID: string): Promise<void> {
         const tag = await this.tagsRepository.findOneBy({ tagID });
-        if (!tag) {
-            throw new NotFoundException('Tag not found');
-        }
+        if (!tag) throw new NotFoundException('Tag not found');
+
         await this.tagsRepository.remove(tag);
     }
 
@@ -67,9 +64,8 @@ export class TagsService {
             where: { tagID },
             relations: ['blogs'],
         });
-        if (!tag) {
-            throw new NotFoundException('Tag not found');
-        }
+        if (!tag) throw new NotFoundException('Tag not found');
+
         return tag.blogs;
     }
 }

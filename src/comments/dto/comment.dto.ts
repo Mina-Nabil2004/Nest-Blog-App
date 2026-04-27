@@ -1,4 +1,5 @@
 import { IsString, IsUUID } from 'class-validator';
+import { UserPublic } from '@/users/dtos/user-public.dto';
 
 export class CommentDto {
     @IsUUID()
@@ -7,11 +8,8 @@ export class CommentDto {
     @IsString()
     content!: string;
 
-    // @IsUUID()
-    // authorID!: string;
-
-    // @IsUUID()
-    // blogID!: string;
+    author!: UserPublic;
+    blogID!: string;
 
     createdAt!: Date;
     updatedAt!: Date;

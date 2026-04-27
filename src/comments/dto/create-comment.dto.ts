@@ -9,10 +9,6 @@ export class CreateCommentDto {
     content!: string;
 
     @ApiProperty()
-    @IsUUID('4', { message: 'authorId must be a valid UUID' })
-    authorID!: string;
-
-    @ApiProperty()
-    @IsUUID('4', { message: 'blogId must be a valid UUID' })
+    @IsUUID('4', { message: 'blogID must be a valid UUID' })
     blogID!: string;
 }

@@ -2,11 +2,10 @@ import {
     IsString,
     IsNotEmpty,
     MinLength,
-    IsUUID,
     IsOptional,
     IsBoolean,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 export class CreateBlogDto {
     @ApiProperty()
@@ -21,12 +20,7 @@ export class CreateBlogDto {
     @MinLength(5, { message: 'Content must be at least 5 characters long' })
     content!: string;
 
-    @ApiProperty()
-    @IsUUID('4', { message: 'authorId must be a valid UUID' })
-    @IsNotEmpty()
-    authorID!: string;
-
-    @ApiProperty()
+    @ApiPropertyOptional()
     @IsBoolean()
     @IsOptional()
     published?: boolean;
