@@ -24,6 +24,9 @@ export class Blog {
     @Column('text', { nullable: false })
     content!: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    imageUrl?: string | null;
+
     @ManyToOne(() => User, (user) => user.blogs, { eager: true })
     author!: User;
 

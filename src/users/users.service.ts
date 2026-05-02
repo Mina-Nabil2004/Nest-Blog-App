@@ -8,9 +8,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserPublic } from './dtos/user-public.dto';
+import fs from 'fs';
+import path from 'path';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
+    private readonly logger = new Logger(UsersService.name);
+
     constructor(
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
@@ -67,7 +72,8 @@ export class UsersService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        await this.usersRepository.delete({ userID });
+        this.deleteLocalFile(user.avatarUrl);
+        await this.usersRepository.remove(user);
     }
 
     async getUserBlogs(userID: string) {
@@ -90,6 +96,41 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
         return user.comments;
+    }
+
+    async uploadAvatar(
+        userID: string,
+        image: Express.Multer.File,
+    ): Promise<UserPublic> {
+        const user = await this.usersRepository.findOneBy({ userID });
+        if (!user) throw new NotFoundException('User not found');
+
+        this.deleteLocalFile(user.avatarUrl);
+        user.avatarUrl = `/uploads/avatars/${image.filename}`;
+
+        return this.toPublicUser(await this.usersRepository.save(user));
+    }
+
+    async deleteAvatar(userID: string): Promise<void> {
+        const user = await this.usersRepository.findOneBy({ userID });
+        if (!user) throw new NotFoundException('User not found');
+
+        this.deleteLocalFile(user.avatarUrl);
+        user.avatarUrl = null;
+        await this.usersRepository.save(user);
+    }
+
+    private deleteLocalFile(imageUrl: string | null | undefined): void {
+        if (!imageUrl) return;
+        const filePath = path.join(process.cwd(), imageUrl);
+        try {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                this.logger.log(`Deleted old image file: ${filePath}`);
+            }
+        } catch {
+            this.logger.error(`Failed to delete file: ${filePath}`);
+        }
     }
 
     private toPublicUser(user: User): UserPublic {

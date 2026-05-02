@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsBoolean } from 'class-validator';
+import { IsString, IsUUID, IsBoolean, IsUrl } from 'class-validator';
 import { UserPublic } from '@/users/dtos/user-public.dto';
 
 export class BlogDto {
@@ -10,6 +10,9 @@ export class BlogDto {
 
     @IsString()
     content!: string;
+
+    @IsUrl()
+    imageUrl?: string;
 
     author!: UserPublic;
 
