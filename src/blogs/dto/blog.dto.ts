@@ -19,6 +19,9 @@ export class BlogDto {
     @IsBoolean()
     published!: boolean;
 
+    @IsBoolean()
+    approved!: boolean;
+
     createdAt!: Date;
     updatedAt!: Date;
 }

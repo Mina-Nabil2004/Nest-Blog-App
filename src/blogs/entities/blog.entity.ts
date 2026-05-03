@@ -40,6 +40,9 @@ export class Blog {
     @Column({ default: false })
     published!: boolean;
 
+    @Column({ default: false })
+    approved!: boolean;
+
     @CreateDateColumn()
     createdAt!: Date;
 

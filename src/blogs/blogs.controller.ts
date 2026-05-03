@@ -21,6 +21,9 @@ import { BlogsService } from './blogs.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../users/enums/user-role.enum';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { ImageValidationPipe } from '@/common/pipes/image-validation.pipe';
 import { blogImageMulterConfig } from '@/common/config/multer.config';
@@ -127,6 +130,14 @@ export class BlogsController {
             updateBlogDto,
             image,
         );
+    }
+
+    @Patch(':id/approve')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @ApiBearerAuth()
+    approveBlog(@Param('id', ParseUUIDPipe) blogID: string) {
+        return this.blogsService.approveBlog(blogID);
     }
 
     @Patch(':id/publish')

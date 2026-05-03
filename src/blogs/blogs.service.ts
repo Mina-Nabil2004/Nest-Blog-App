@@ -19,6 +19,8 @@ import { BlogDto } from './dto/blog.dto';
 import { TagDto } from '../tags/dto/tag.dto';
 import { Comment } from '@/comments/entities/comment.entity';
 import { CommentDto } from '../comments/dto/comment.dto';
+import { MailService } from '@/mail/mail.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BlogsService {
@@ -30,6 +32,8 @@ export class BlogsService {
         private readonly usersRepository: Repository<User>,
         @InjectRepository(Tag)
         private readonly tagsRepository: Repository<Tag>,
+        private readonly mailService: MailService,
+        private readonly configService: ConfigService,
     ) {}
 
     async createBlog(
@@ -124,9 +128,15 @@ export class BlogsService {
         if (!blog) throw new NotFoundException('Blog not found');
         this.assertAuthor(blog.author.userID, authorID);
 
+        if (!blog.approved) {
+            throw new BadRequestException(
+                'Blog must be approved by an admin before publishing',
+            );
+        }
         if (blog.published) {
             throw new BadRequestException('Blog is already published');
         }
+
         blog.published = true;
         return this.toPublicBlog(await this.blogsRepository.save(blog));
     }
@@ -144,6 +154,36 @@ export class BlogsService {
         }
         blog.published = false;
         return this.toPublicBlog(await this.blogsRepository.save(blog));
+    }
+
+    async approveBlog(blogID: string): Promise<BlogDto> {
+        const blog = await this.blogsRepository.findOne({
+            where: { blogID },
+            relations: ['author'],
+        });
+        if (!blog) throw new NotFoundException('Blog not found');
+
+        if (blog.approved) {
+            throw new BadRequestException('Blog is already approved');
+        }
+
+        blog.approved = true;
+        const saved = await this.blogsRepository.save(blog);
+
+        // Notify the author — fire and forget, never throws
+        const appUrl = this.configService.getOrThrow<string>('APP_URL');
+        await this.mailService.sendEmail({
+            to: blog.author.email,
+            subject: 'Your blog post has been approved!',
+            template: 'blog-approved',
+            context: {
+                authorName: blog.author.name,
+                blogTitle: blog.title,
+                blogUrl: `${appUrl}/blogs/${blogID}`,
+            },
+        });
+
+        return this.toPublicBlog(saved);
     }
 
     async deleteBlog(blogID: string, authorID: string): Promise<void> {

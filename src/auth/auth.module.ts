@@ -12,6 +12,7 @@ import { RefreshTokenSubscriber } from './refresh-token.subscriber';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from '@/users/entities/user.entity';
 import { StringValue } from 'ms';
+import { MailModule } from '@/mail/mail.module';
 
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import { StringValue } from 'ms';
                 },
             }),
         }),
+        MailModule,
     ],
     controllers: [AuthController],
     providers: [
