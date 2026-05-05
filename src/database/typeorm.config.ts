@@ -1,10 +1,10 @@
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { User } from './src/users/entities/user.entity';
-import { Blog } from './src/blogs/entities/blog.entity';
-import { Comment } from './src/comments/entities/comment.entity';
-import { Tag } from './src/tags/entities/tag.entity';
-import { RefreshToken } from './src/auth/entities/refresh-token.entity';
+import { User } from '@/users/entities/user.entity';
+import { Blog } from '@/blogs/entities/blog.entity';
+import { Comment } from '@/comments/entities/comment.entity';
+import { Tag } from '@/tags/entities/tag.entity';
+import { RefreshToken } from '@/auth/entities/refresh-token.entity';
 
 config();
 
