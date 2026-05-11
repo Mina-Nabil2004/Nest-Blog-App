@@ -8,9 +8,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserPublic } from './dtos/user-public.dto';
-import fs from 'fs';
-import path from 'path';
 import { Logger } from '@nestjs/common';
+import { S3Service } from '@/common/s3/s3.service';
+import 'multer-s3';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +19,7 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
+        private readonly s3Service: S3Service,
     ) {}
 
     async getUserById(userID: string): Promise<UserPublic> {
@@ -72,7 +73,7 @@ export class UsersService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        this.deleteLocalFile(user.avatarUrl);
+        await this.s3Service.deleteObject(user.avatarUrl);
         await this.usersRepository.remove(user);
     }
 
@@ -105,8 +106,8 @@ export class UsersService {
         const user = await this.usersRepository.findOneBy({ userID });
         if (!user) throw new NotFoundException('User not found');
 
-        this.deleteLocalFile(user.avatarUrl);
-        user.avatarUrl = `/uploads/avatars/${image.filename}`;
+        await this.s3Service.deleteObject(user.avatarUrl);
+        user.avatarUrl = (image as Express.MulterS3.File).location;
 
         return this.toPublicUser(await this.usersRepository.save(user));
     }
@@ -115,22 +116,9 @@ export class UsersService {
         const user = await this.usersRepository.findOneBy({ userID });
         if (!user) throw new NotFoundException('User not found');
 
-        this.deleteLocalFile(user.avatarUrl);
+        await this.s3Service.deleteObject(user.avatarUrl);
         user.avatarUrl = null;
         await this.usersRepository.save(user);
-    }
-
-    private deleteLocalFile(imageUrl: string | null | undefined): void {
-        if (!imageUrl) return;
-        const filePath = path.join(process.cwd(), imageUrl);
-        try {
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                this.logger.log(`Deleted old image file: ${filePath}`);
-            }
-        } catch {
-            this.logger.error(`Failed to delete file: ${filePath}`);
-        }
     }
 
     private toPublicUser(user: User): UserPublic {

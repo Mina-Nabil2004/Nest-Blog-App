@@ -6,8 +6,6 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import fs from 'fs';
-import path from 'path';
 import { Logger } from '@nestjs/common';
 
 import { Blog } from './entities/blog.entity';
@@ -19,8 +17,10 @@ import { BlogDto } from './dto/blog.dto';
 import { TagDto } from '../tags/dto/tag.dto';
 import { Comment } from '@/comments/entities/comment.entity';
 import { CommentDto } from '../comments/dto/comment.dto';
-import { MailService } from '@/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
+import { S3Service } from '@/common/s3/s3.service';
+import { QueueService } from '@/queue/queue.service';
+import 'multer-s3';
 
 @Injectable()
 export class BlogsService {
@@ -32,7 +32,8 @@ export class BlogsService {
         private readonly usersRepository: Repository<User>,
         @InjectRepository(Tag)
         private readonly tagsRepository: Repository<Tag>,
-        private readonly mailService: MailService,
+        private readonly s3Service: S3Service,
+        private readonly queueService: QueueService,
         private readonly configService: ConfigService,
     ) {}
 
@@ -50,7 +51,7 @@ export class BlogsService {
             ...createBlogDto,
             author,
             ...(image && {
-                imageUrl: this.buildImageUrl('blogs', image.filename),
+                imageUrl: (image as Express.MulterS3.File).location,
             }),
         });
 
@@ -68,8 +69,8 @@ export class BlogsService {
         if (!blog) throw new NotFoundException('Blog not found');
         this.assertAuthor(blog.author.userID, authorID);
 
-        this.deleteLocalFile(blog.imageUrl);
-        blog.imageUrl = this.buildImageUrl('blogs', image.filename);
+        await this.s3Service.deleteObject(blog.imageUrl);
+        blog.imageUrl = (image as Express.MulterS3.File).location;
 
         return this.toPublicBlog(await this.blogsRepository.save(blog));
     }
@@ -112,8 +113,8 @@ export class BlogsService {
         this.assertAuthor(blog.author.userID, authorID);
 
         if (image) {
-            this.deleteLocalFile(blog.imageUrl);
-            blog.imageUrl = this.buildImageUrl('blogs', image.filename);
+            await this.s3Service.deleteObject(blog.imageUrl);
+            blog.imageUrl = (image as Express.MulterS3.File).location;
         }
 
         Object.assign(blog, updateBlogDto);
@@ -170,17 +171,12 @@ export class BlogsService {
         blog.approved = true;
         const saved = await this.blogsRepository.save(blog);
 
-        // Notify the author — fire and forget, never throws
         const appUrl = this.configService.getOrThrow<string>('APP_URL');
-        await this.mailService.sendEmail({
-            to: blog.author.email,
-            subject: 'Your blog post has been approved!',
-            template: 'blog-approved',
-            context: {
-                authorName: blog.author.name,
-                blogTitle: blog.title,
-                blogUrl: `${appUrl}/blogs/${blogID}`,
-            },
+        this.queueService.publishBlogApproved({
+            authorEmail: blog.author.email,
+            authorName: blog.author.name,
+            blogTitle: blog.title,
+            blogUrl: `${appUrl}/blogs/${blogID}`,
         });
 
         return this.toPublicBlog(saved);
@@ -194,7 +190,7 @@ export class BlogsService {
         if (!blog) throw new NotFoundException('Blog not found');
         this.assertAuthor(blog.author.userID, authorID);
 
-        this.deleteLocalFile(blog.imageUrl);
+        await this.s3Service.deleteObject(blog.imageUrl);
         await this.blogsRepository.remove(blog);
     }
 
@@ -251,23 +247,6 @@ export class BlogsService {
     private assertAuthor(ownerID: string, requesterID: string): void {
         if (ownerID !== requesterID) {
             throw new ForbiddenException('You are not the author of this blog');
-        }
-    }
-
-    private buildImageUrl(folder: string, filename: string): string {
-        return `/uploads/${folder}/${filename}`;
-    }
-
-    private deleteLocalFile(imageUrl: string | null | undefined): void {
-        if (!imageUrl) return;
-        const filePath = path.join(process.cwd(), imageUrl);
-        try {
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                this.logger.log(`Deleted old image file: ${filePath}`);
-            }
-        } catch {
-            this.logger.error(`Failed to delete file: ${filePath}`);
         }
     }
 
