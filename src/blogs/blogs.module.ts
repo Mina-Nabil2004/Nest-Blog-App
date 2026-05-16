@@ -7,9 +7,10 @@ import { Blog } from './entities/blog.entity';
 import { User } from '../users/entities/user.entity';
 import { Tag } from '../tags/entities/tag.entity';
 import { BlogSubscriber } from './blogs.subscriber';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Blog, User, Tag])],
+    imports: [TypeOrmModule.forFeature([Blog, User, Tag]), MailModule],
     controllers: [BlogsController],
     providers: [BlogsService, BlogSubscriber],
 })

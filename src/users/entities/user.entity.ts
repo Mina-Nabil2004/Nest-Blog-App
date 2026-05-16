@@ -31,6 +31,9 @@ export class User {
     })
     role!: 'BASIC' | 'ADMIN';
 
+    @Column({ type: 'varchar', nullable: true })
+    avatarUrl?: string | null;
+
     @OneToMany(() => Blog, (blog) => blog.author)
     blogs!: Blog[];
 

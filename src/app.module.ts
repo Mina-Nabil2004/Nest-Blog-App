@@ -13,6 +13,7 @@ import { BlogsModule } from './blogs/blogs.module';
 import { CommentsModule } from './comments/comments.module';
 import { TagsModule } from './tags/tags.module';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { AuthModule } from './auth/auth.module';
         CommentsModule,
         TagsModule,
         AuthModule,
+        MailModule,
     ],
     controllers: [AppController],
     providers: [

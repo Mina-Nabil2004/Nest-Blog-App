@@ -20,6 +20,7 @@ import { ChangePasswordDto } from './dtos/change-password.dto';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { UserPublic } from '../users/dtos/user-public.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { MailService } from '@/mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
         private readonly refreshTokensRepo: Repository<RefreshToken>,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly mailService: MailService,
     ) {
         this.bcryptRounds = parseInt(
             configService.getOrThrow('BCRYPT_ROUNDS'),
@@ -67,7 +69,19 @@ export class AuthService {
             passwordHash: await bcrypt.hash(dto.password, this.bcryptRounds),
         });
 
-        return this.toPublicUser(await this.usersRepo.save(user));
+        const saved = await this.usersRepo.save(user);
+
+        await this.mailService.sendEmail({
+            to: saved.email,
+            subject: 'Welcome to Blog App!',
+            template: 'welcome',
+            context: {
+                name: saved.name,
+                appUrl: this.configService.getOrThrow<string>('APP_URL'),
+            },
+        });
+
+        return this.toPublicUser(saved);
     }
 
     async loginUser(dto: LoginDto): Promise<LoginResponseDto> {

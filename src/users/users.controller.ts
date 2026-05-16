@@ -3,18 +3,26 @@ import {
     Param,
     Controller,
     Delete,
+    Post,
     Get,
     Patch,
     UseGuards,
+    Request,
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UploadedFile,
+    UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { ImageValidationPipe } from '@/common/pipes/image-validation.pipe';
+import { userAvatarMulterConfig } from '@/common/config/multer.config';
 
 @ApiTags('users')
 @Controller('users')
@@ -57,5 +65,44 @@ export class UsersController {
     @HttpCode(HttpStatus.NO_CONTENT)
     deleteUser(@Param('id', ParseUUIDPipe) userID: string) {
         return this.usersService.deleteUser(userID);
+    }
+
+    @Post('me/avatar')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor('image', userAvatarMulterConfig))
+    @ApiBearerAuth()
+    @ApiConsumes('multipart/form-data')
+    uploadAvatar(
+        @Request() req: { user: JwtPayload },
+        @UploadedFile(new ImageValidationPipe(true))
+        image: Express.Multer.File,
+    ) {
+        return this.usersService.uploadAvatar(req.user.sub, image);
+    }
+
+    @Delete('me/avatar')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    deleteAvatar(@Request() req: { user: JwtPayload }) {
+        return this.usersService.deleteAvatar(req.user.sub);
+    }
+
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    updateMe(
+        @Request() req: { user: JwtPayload },
+        @Body() updateUserDto: UpdateUserDto,
+    ) {
+        return this.usersService.updateUser(req.user.sub, updateUserDto);
+    }
+
+    @Delete('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    deleteMe(@Request() req: { user: JwtPayload }) {
+        return this.usersService.deleteUser(req.user.sub);
     }
 }
