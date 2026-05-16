@@ -7,10 +7,15 @@ import { Blog } from './entities/blog.entity';
 import { User } from '../users/entities/user.entity';
 import { Tag } from '../tags/entities/tag.entity';
 import { BlogSubscriber } from './blogs.subscriber';
-import { MailModule } from '../mail/mail.module';
+import { QueueModule } from '../queue/queue.module';
+import { S3Module } from '../common/s3/s3.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Blog, User, Tag]), MailModule],
+    imports: [
+        TypeOrmModule.forFeature([Blog, User, Tag]),
+        QueueModule,
+        S3Module,
+    ],
     controllers: [BlogsController],
     providers: [BlogsService, BlogSubscriber],
 })

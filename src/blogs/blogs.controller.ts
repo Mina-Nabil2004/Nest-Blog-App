@@ -14,7 +14,6 @@ import {
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 
 import { BlogsService } from './blogs.service';
@@ -26,7 +25,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/enums/user-role.enum';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { ImageValidationPipe } from '@/common/pipes/image-validation.pipe';
-import { blogImageMulterConfig } from '@/common/config/multer.config';
+import { S3FileInterceptor } from '@/common/s3/s3-file.interceptor';
 
 @ApiTags('blogs')
 @Controller('blogs')
@@ -65,7 +64,7 @@ export class BlogsController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image', blogImageMulterConfig))
+    @UseInterceptors(S3FileInterceptor('image', 'blogs'))
     @ApiBearerAuth()
     @ApiConsumes('multipart/form-data', 'application/json')
     createBlog(
@@ -79,7 +78,7 @@ export class BlogsController {
 
     @Post(':id/image')
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image', blogImageMulterConfig))
+    @UseInterceptors(S3FileInterceptor('image', 'blogs'))
     @ApiBearerAuth()
     @ApiConsumes('multipart/form-data')
     uploadBlogImage(
@@ -114,7 +113,7 @@ export class BlogsController {
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image', blogImageMulterConfig))
+    @UseInterceptors(S3FileInterceptor('image', 'blogs'))
     @ApiBearerAuth()
     @ApiConsumes('multipart/form-data', 'application/json')
     updateBlog(

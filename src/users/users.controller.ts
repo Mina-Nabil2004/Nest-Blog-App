@@ -14,7 +14,6 @@ import {
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
@@ -22,7 +21,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { ImageValidationPipe } from '@/common/pipes/image-validation.pipe';
-import { userAvatarMulterConfig } from '@/common/config/multer.config';
+import { S3FileInterceptor } from '@/common/s3/s3-file.interceptor';
 
 @ApiTags('users')
 @Controller('users')
@@ -69,7 +68,7 @@ export class UsersController {
 
     @Post('me/avatar')
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('image', userAvatarMulterConfig))
+    @UseInterceptors(S3FileInterceptor('image', 'avatars'))
     @ApiBearerAuth()
     @ApiConsumes('multipart/form-data')
     uploadAvatar(
