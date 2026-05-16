@@ -1,0 +1,31 @@
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    CreateDateColumn,
+    ManyToOne,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+
+@Entity()
+export class RefreshToken {
+    @PrimaryGeneratedColumn('uuid')
+    tokenID!: string;
+
+    @Column({ nullable: false })
+    tokenHash!: string;
+
+    @Column({ default: false })
+    isRevoked!: boolean;
+
+    @ManyToOne(() => User, (user) => user.refreshTokens, {
+        onDelete: 'CASCADE',
+    })
+    user!: User;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @Column({ type: 'timestamp', nullable: false })
+    expiresAt!: Date;
+}
