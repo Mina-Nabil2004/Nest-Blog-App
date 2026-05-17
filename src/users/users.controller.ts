@@ -48,24 +48,6 @@ export class UsersController {
         return this.usersService.getUserComments(userID);
     }
 
-    @Patch(':id')
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    updateUser(
-        @Param('id', ParseUUIDPipe) userID: string,
-        @Body() updateUserDto: UpdateUserDto,
-    ) {
-        return this.usersService.updateUser(userID, updateUserDto);
-    }
-
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    @HttpCode(HttpStatus.NO_CONTENT)
-    deleteUser(@Param('id', ParseUUIDPipe) userID: string) {
-        return this.usersService.deleteUser(userID);
-    }
-
     @Post('me/avatar')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(S3FileInterceptor('image', 'avatars'))
@@ -103,5 +85,23 @@ export class UsersController {
     @HttpCode(HttpStatus.NO_CONTENT)
     deleteMe(@Request() req: { user: JwtPayload }) {
         return this.usersService.deleteUser(req.user.sub);
+    }
+
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    updateUser(
+        @Param('id', ParseUUIDPipe) userID: string,
+        @Body() updateUserDto: UpdateUserDto,
+    ) {
+        return this.usersService.updateUser(userID, updateUserDto);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(HttpStatus.NO_CONTENT)
+    deleteUser(@Param('id', ParseUUIDPipe) userID: string) {
+        return this.usersService.deleteUser(userID);
     }
 }
