@@ -129,11 +129,6 @@ export class BlogsService {
         if (!blog) throw new NotFoundException('Blog not found');
         this.assertAuthor(blog.author.userID, authorID);
 
-        if (!blog.approved) {
-            throw new BadRequestException(
-                'Blog must be approved by an admin before publishing',
-            );
-        }
         if (blog.published) {
             throw new BadRequestException('Blog is already published');
         }
