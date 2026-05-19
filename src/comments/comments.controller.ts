@@ -71,6 +71,6 @@ export class CommentsController {
         @Param('id', ParseUUIDPipe) id: string,
         @Request() req: { user: JwtPayload },
     ) {
-        return this.commentsService.deleteComment(id, req.user.sub);
+        return this.commentsService.deleteComment(id, req.user.sub, req.user.role);
     }
 }

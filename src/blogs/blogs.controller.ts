@@ -156,7 +156,7 @@ export class BlogsController {
         @Param('id', ParseUUIDPipe) blogID: string,
         @Request() req: { user: JwtPayload },
     ) {
-        return this.blogsService.unpublishBlog(blogID, req.user.sub);
+        return this.blogsService.unpublishBlog(blogID, req.user.sub, req.user.role);
     }
 
     @Delete(':id')
@@ -167,6 +167,6 @@ export class BlogsController {
         @Param('id', ParseUUIDPipe) blogID: string,
         @Request() req: { user: JwtPayload },
     ) {
-        return this.blogsService.deleteBlog(blogID, req.user.sub);
+        return this.blogsService.deleteBlog(blogID, req.user.sub, req.user.role);
     }
 }

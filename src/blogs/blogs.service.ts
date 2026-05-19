@@ -142,18 +142,19 @@ export class BlogsService {
         return this.toPublicBlog(await this.blogsRepository.save(blog));
     }
 
-    async unpublishBlog(blogID: string, authorID: string): Promise<BlogDto> {
+    async unpublishBlog(blogID: string, authorID: string, role?: string): Promise<BlogDto> {
         const blog = await this.blogsRepository.findOne({
             where: { blogID },
             relations: ['author'],
         });
         if (!blog) throw new NotFoundException('Blog not found');
-        this.assertAuthor(blog.author.userID, authorID);
+        if (role !== 'ADMIN') this.assertAuthor(blog.author.userID, authorID);
 
         if (!blog.published) {
             throw new BadRequestException('Blog is already unpublished');
         }
         blog.published = false;
+        blog.approved = false;
         return this.toPublicBlog(await this.blogsRepository.save(blog));
     }
 
@@ -182,13 +183,13 @@ export class BlogsService {
         return this.toPublicBlog(saved);
     }
 
-    async deleteBlog(blogID: string, authorID: string): Promise<void> {
+    async deleteBlog(blogID: string, authorID: string, role?: string): Promise<void> {
         const blog = await this.blogsRepository.findOne({
             where: { blogID },
             relations: ['author'],
         });
         if (!blog) throw new NotFoundException('Blog not found');
-        this.assertAuthor(blog.author.userID, authorID);
+        if (role !== 'ADMIN') this.assertAuthor(blog.author.userID, authorID);
 
         await this.s3Service.deleteObject(blog.imageUrl);
         await this.blogsRepository.remove(blog);

@@ -82,14 +82,14 @@ export class CommentsService {
         );
     }
 
-    async deleteComment(commentID: string, authorID: string): Promise<void> {
+    async deleteComment(commentID: string, authorID: string, role?: string): Promise<void> {
         const comment = await this.commentsRepository.findOne({
             where: { commentID },
             relations: ['author'],
         });
         if (!comment) throw new NotFoundException('Comment not found');
 
-        if (comment.author.userID !== authorID) {
+        if (role !== 'ADMIN' && comment.author.userID !== authorID) {
             throw new ForbiddenException(
                 'You can only delete your own comments',
             );
